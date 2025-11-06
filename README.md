@@ -97,15 +97,6 @@ cargo audit          # dependency health
 
 Report vulnerabilities privately per [SECURITY.md](SECURITY.md). Supported release branches and disclosure process are documented there.
 
-## License
-
-Licensed under either of
-
-- [Apache License, Version 2.0](LICENSE-APACHE)
-- [MIT license](LICENSE-MIT)
-
-at your option.
-
 ## Acknowledgements
 
 Built on top of the Rust ecosystem: `tar`, `camino`, `rayon`, `indicatif`, and many others that make secure tooling viable.
