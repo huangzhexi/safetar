@@ -1,0 +1,73 @@
+[package]
+name = "safetar"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "A secure-by-default tar CLI and embeddable library in Rust"
+readme = "README.md"
+repository = "https://github.com/your-org/safetar"
+keywords = ["tar", "archive", "security", "cli"]
+categories = ["command-line-utilities"]
+
+[workspace]
+members = ["."]
+resolver = "2"
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+walkdir = "2.5"
+time = { version = "0.3", features = ["formatting"] }
+flate2 = { version = "1.0", features = ["zlib"], optional = true }
+xz2 = { version = "0.1", optional = true }
+zstd = { version = "0.13", optional = true }
+sha2 = "0.10"
+hex = "0.4"
+rayon = "1.10"
+bytes = "1.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+indicatif = "0.17"
+regex = "1.10"
+path-clean = "1.0"
+tempfile = "3.10"
+fs-err = "2.11"
+camino = "1.1"
+bstr = "1.9"
+globset = "0.4"
+tar = "0.4"
+
+[features]
+default = ["zstd", "xz", "gzip"]
+gzip = ["dep:flate2"]
+xz = ["dep:xz2"]
+zstd = ["dep:zstd"]
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.0"
+insta = { version = "1.38", features = ["yaml"] }
+tempfile = "3.10"
+serial_test = "3.0"
+approx = "0.5"
+proptest = "1.4"
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+
+[package.metadata.cargo-udeps]
+# Reserved for future cargo-udeps exemptions (leave empty unless needed).
+
+[workspace.metadata]
+# Workspace-wide metadata lives here; nested tables configure tooling integration.
+
+[workspace.metadata.nextest]
+# cargo-nextest uses this section for default profile wiring.
+default-profile = "ci"
+
+[workspace.metadata.nextest.profiles.ci]
+retries = 0
+status-level = "fail-slow"

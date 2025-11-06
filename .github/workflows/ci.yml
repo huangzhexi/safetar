@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main", "dev"]
+
+jobs:
+  lint-test:
+    name: Lint & Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runner: linux
+          - os: macos-latest
+            runner: macos
+          - os: windows-latest
+            runner: windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --all-targets --workspace -- -D warnings
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - name: Tests (nextest)
+        run: cargo nextest run --workspace
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+      - name: Audit dependencies
+        run: cargo audit --deny warnings
+
+  release:
+    name: Release artifacts
+    needs: lint-test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            archive: tar.gz
+          - os: macos-latest
+            archive: tar.gz
+          - os: windows-latest
+            archive: zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release
+        run: cargo build --release --workspace
+      - name: Package artifact (tar)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          ARTIFACT="safetar-${{ matrix.os }}-${{ github.ref_name }}"
+          mkdir -p dist
+          cp target/release/safetar dist/
+          tar -czf "${ARTIFACT}.tar.gz" -C dist safetar
+      - name: Package artifact (zip)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $artifact = "safetar-${{ matrix.os }}-${{ github.ref_name }}"
+          New-Item -ItemType Directory -Path dist | Out-Null
+          Copy-Item target\release\safetar.exe dist\
+          Compress-Archive -Path dist\* -DestinationPath "$artifact.zip"
+      - name: Upload release asset (tar)
+        if: matrix.archive == 'tar.gz'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: safetar-${{ matrix.os }}-${{ github.ref_name }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload release asset (zip)
+        if: matrix.archive == 'zip'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: safetar-${{ matrix.os }}-${{ github.ref_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: safetar-${{ matrix.os }}-${{ github.ref_name }}
+          path: safetar-${{ matrix.os }}-${{ github.ref_name }}.${{ matrix.archive }}
