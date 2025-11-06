@@ -1,7 +1,6 @@
 # safetar
 
 [![CI](https://github.com/your-org/safetar/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/safetar/actions/workflows/ci.yml)
-[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 [![Crates.io](https://img.shields.io/crates/v/safetar.svg?label=crates.io&logo=rust)](https://crates.io/crates/safetar)
 
 safetar is a secure-by-default tar-compatible archiver and library written in Rust. It enables path sanitisation, resource quotas, and link confinement out of the box while remaining largely compatible with GNU tar and bsdtar for everyday workflows.
