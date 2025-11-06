@@ -108,6 +108,18 @@ impl SecurityPolicy {
             return Err(PolicyError::EmptyPath);
         }
 
+        for component in path.components() {
+            match component {
+                Utf8Component::RootDir | Utf8Component::Prefix(_) if !self.allow_absolute => {
+                    return Err(PolicyError::AbsolutePath(path.to_owned()));
+                }
+                Utf8Component::ParentDir if !self.allow_parent_components => {
+                    return Err(PolicyError::ParentTraversal(path.to_owned()));
+                }
+                _ => {}
+            }
+        }
+
         if path.is_absolute() && !self.allow_absolute {
             return Err(PolicyError::AbsolutePath(path.to_owned()));
         }
@@ -128,7 +140,9 @@ impl SecurityPolicy {
                     return Err(PolicyError::ParentTraversal(cleaned.clone()));
                 }
                 Utf8Component::RootDir | Utf8Component::Prefix(_) if !self.allow_absolute => {
-                    return Err(PolicyError::AbsolutePath(path.to_owned()));
+                    if !cleaned.starts_with(root) {
+                        return Err(PolicyError::RootEscape(cleaned.clone()));
+                    }
                 }
                 _ => {}
             }
