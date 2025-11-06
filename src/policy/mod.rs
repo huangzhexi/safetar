@@ -128,10 +128,7 @@ impl SecurityPolicy {
                     return Err(PolicyError::ParentTraversal(cleaned.clone()));
                 }
                 Utf8Component::RootDir | Utf8Component::Prefix(_) if !self.allow_absolute => {
-                    // If allow_absolute is false, any root/prefix that isn't the archive root rejects.
-                    if !cleaned.starts_with(root) {
-                        return Err(PolicyError::RootEscape(cleaned.clone()));
-                    }
+                    return Err(PolicyError::AbsolutePath(path.to_owned()));
                 }
                 _ => {}
             }
